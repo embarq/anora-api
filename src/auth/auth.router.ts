@@ -8,6 +8,7 @@ export const getAuthRouter = (connection: Connection): Router => {
   const authController = getAuthController(connection);
 
   authRouter.post('/register', authController.register);
+  authRouter.post('/login', authController.login);
 
   return authRouter;
 }
