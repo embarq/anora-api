@@ -12,16 +12,20 @@ export interface User extends Credentials, Document {
 const UserSchema = new Schema({
   name: {
     type: String,
-    required: true
+    trim: true,
+    required: '{PATH} is required'
   },
   email: {
     type: String,
-    required: true,
+    trim: true,
+    lowercase: true,
+    required: '{PATH} is required',
     index: true
   },
   password: {
     type: String,
-    required: true
+    required: '{PATH} is required',
+    minlength: [8, 'Password should be more that 8 characters']
   }
 });
 
