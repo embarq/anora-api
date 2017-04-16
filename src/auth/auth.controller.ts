@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import { strictEqual } from 'assert';
 import { Connection, Document, Model } from 'mongoose';
 import { getUserModel, Credentials, User } from '../user/user.model';
+import { baseRequestHandler } from '../etc/helpers';
 
 /** Model -> User > Promise */
 const register = (model: Model<Document>) => (user: User) => model
@@ -43,15 +44,13 @@ export interface AuthControllerMethods {
 
 /** Connection -> Model -> AuthControllerMethods */
 export const getAuthController = (connection: Connection): AuthControllerMethods => {
-  const Model = getUserModel(connection);
+  const UserModel = getUserModel(connection);
 
   return {
-    login: (req, res) => login(Model)(req.body)
-      .then(result => res.status(200).json(result))
-      .catch(err => res.status(400).json({ message: err.message })),
+    login: (req, res) =>
+      baseRequestHandler(res, login(UserModel)(req.body)),
 
-    register: (req, res) => register(Model)(req.body)
-      .then(result => res.status(200).json(result))
-      .catch(err => res.status(400).json({ message: err.message }))
+    register: (req, res) =>
+      baseRequestHandler(res, register(UserModel)(req.body))
   }
 }
