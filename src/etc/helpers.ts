@@ -1,6 +1,16 @@
 import { Response } from 'express';
 import { ValidationError } from 'mongoose';
 import ExpressValidator = require('express-validator');
+import { sign, verify } from 'jsonwebtoken';
+import { cert } from '../etc/config';
+
+export const encodeToken = (payload: any) => new Promise<any>((resolve, reject) =>
+  sign(payload, cert, { expiresIn: '3 days' }, (err, encoded) =>
+    err != null ? reject(err) : resolve(encoded)));
+
+export const decodeToken = (token: string) => new Promise<any>((resolve, reject) =>
+  verify(token, cert, (err, decoded) =>
+    err != null ? reject(err) : resolve(decoded)));
 
 export class RequestValidationError extends Error {
   public readonly name: 'RequestValidationError';

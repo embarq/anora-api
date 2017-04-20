@@ -7,7 +7,13 @@ import ExpressValidator = require('express-validator');
 
 import { getUserModel, Credentials, User } from '../user/user.model';
 import { ControllerMethods } from '../etc/declarations';
-import { baseRequestHandler, validatedRequestHandler } from '../etc/helpers';
+import {
+  encodeToken,
+  decodeToken,
+
+  baseRequestHandler,
+  validatedRequestHandler
+} from '../etc/helpers';
 
 /**
  * @private
@@ -38,7 +44,7 @@ const validateRegisterForm = (req: ExpressValidator.RequestValidation) => {
 
 const validateLoginForm = (req: ExpressValidator.RequestValidation) => {
   req.checkBody('email', 'Invalid email').isEmail();
-  req.checkBody('password', 'Password should be minimum 8 characters').len({ min: 8 });
+  req.checkBody('password', 'Password required').notEmpty();
   return req.getValidationResult();
 }
 
@@ -69,12 +75,13 @@ const login = (model: Model<Document>) => credentials => model
     return compare(credentials.password, doc.password)
       .then(isMatch => {
         if (isMatch) {
-          return userDocumentToObject(doc);
+          return encodeToken(doc);
         } else {
           throw new Error('Incorrect password');
         }
       });
-  });
+  })
+  .then(token => ({ token }));
 
 /** Connection -> Model -> AuthControllerMethods */
 export const getAuthController = (connection: Connection): ControllerMethods => {

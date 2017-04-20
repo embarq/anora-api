@@ -11,13 +11,16 @@ import { getBoardsRouter } from './boards/boards.router';
 const databaseURI = process.env.DB_URI || 'mongodb://localhost/anora';
 const connection = mongoose.createConnection(databaseURI);
 const app = express();
+const api = express.Router();
 
 app.use(bodyParser.json());
 app.use(validator({
   errorFormatter: (param, message, value) => ({ param, message, value })
 }));
 
-app.use('/auth', getAuthRouter(connection));
-app.use('/boards', getBoardsRouter(connection));
+api.use('/auth', getAuthRouter(connection));
+api.use('/boards', getBoardsRouter(connection));
+
+app.use('/api', api);
 
 app.listen(process.env.PORT || 3000, _ => console.log('App running'));
