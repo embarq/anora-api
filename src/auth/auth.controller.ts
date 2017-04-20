@@ -36,6 +36,12 @@ const validateNewUser = (req: ExpressValidator.RequestValidation) => {
   return req.getValidationResult();
 }
 
+const validateLoginForm = (req: ExpressValidator.RequestValidation) => {
+  req.checkBody('email', 'Invalid email').isEmail();
+  req.checkBody('password', 'Password should be minimum 8 characters').len({ min: 8 });
+  return req.getValidationResult();
+}
+
 /** Model -> User > Promise */
 const register = (model: Model<Document>) => (user: User) => model
   .findOne({
@@ -76,7 +82,10 @@ export const getAuthController = (connection: Connection): ControllerMethods => 
 
   return {
     login: (req, res) =>
-      baseRequestHandler(res, login(UserModel)(req.body)),
+      validatedRequestHandler(
+        res,
+        () => validateLoginForm(req),
+        () => login(UserModel)(req.body)),
 
     register: (req, res) =>
       validatedRequestHandler(
