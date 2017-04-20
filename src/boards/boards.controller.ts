@@ -1,9 +1,21 @@
 import { Connection, Document, Model } from 'mongoose';
 import { RequestHandler } from 'express';
 import { getBoardModel } from './boards.model';
-import { baseRequestHandler } from '../etc/helpers';
+import { baseRequestHandler, validatedRequestHandler } from '../etc/helpers';
+import ExpressValidator = require('express-validator');
 
 const authorSelector = 'name';
+
+const validateCreateBoardForm = (req: ExpressValidator.RequestValidation) => {
+  req.checkBody('title', 'Board title is required').notEmpty();
+  req.checkBody('author', 'Invalid author id or missing').isMongoId();
+  return req.getValidationResult();
+}
+
+const validateBoardId = (req: ExpressValidator.RequestValidation) => {
+  req.checkParams('id', 'Board is not exists').isMongoId();
+  return req.getValidationResult();
+}
 
 const create = (model: Model<Document>) => board => model
   .create(Object.assign(board, {
@@ -44,10 +56,16 @@ export const getBoardsController = (connection: Connection) => {
 
   return {
     create: (req, res) =>
-      baseRequestHandler(res, create(BoardModel)(req.body)),
+      validatedRequestHandler(
+        res,
+        () => validateCreateBoardForm(req),
+        () => create(BoardModel)(req.body)),
 
     getBoard: (req, res) =>
-      baseRequestHandler(res, getBoard(BoardModel)(req.params['id'])),
+      validatedRequestHandler(
+        res,
+        () => validateBoardId(req),
+        () => getBoard(BoardModel)(req.params['id'])),
 
     getAllBoards: (req, res) =>
       baseRequestHandler(res, getAllBoards(BoardModel)())
