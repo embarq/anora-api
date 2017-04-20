@@ -3,9 +3,11 @@ import { strictEqual } from 'assert';
 import { Connection, Document, Model } from 'mongoose';
 import { compare, hash } from 'bcryptjs';
 
+import ExpressValidator = require('express-validator');
+
 import { getUserModel, Credentials, User } from '../user/user.model';
 import { ControllerMethods } from '../etc/declarations';
-import { baseRequestHandler } from '../etc/helpers';
+import { baseRequestHandler, validatedRequestHandler } from '../etc/helpers';
 
 /**
  * @private
@@ -14,12 +16,25 @@ const registerUser = (model: Model<Document>) =>
   (user: User) => hash(user.password, 8)
     .then(hash => model.create(Object.assign(user, { password: hash })));
 
+/**
+ * @private
+ */
 const userDocumentToObject = (doc: Document) => doc.toObject({
   minimize: true,
   transform: (doc, ret) => {
     delete (ret as any).password;
   }
-})
+});
+
+/**
+ * @private
+ */
+const validateNewUser = (req: ExpressValidator.RequestValidation) => {
+  req.checkBody('name', 'Name cannot be empty').notEmpty();
+  req.checkBody('email', 'Invalid email').isEmail();
+  req.checkBody('password', 'Password should be minimum 8 characters').len({ min: 8 });
+  return req.getValidationResult();
+}
 
 /** Model -> User > Promise */
 const register = (model: Model<Document>) => (user: User) => model
@@ -34,13 +49,7 @@ const register = (model: Model<Document>) => (user: User) => model
       return registerUser(model)(user);
     }
   })
-  .then(doc => new Promise((resolve, reject) => doc.validate(err =>
-    err == null ? resolve(doc) : reject(err))))
-  .then(doc => userDocumentToObject(doc))
-  .catch(err => {
-    console.error(err);
-    throw err;
-  });
+  .then(doc => userDocumentToObject(doc));
 
 /** Model -> Credentials -> Promise */
 const login = (model: Model<Document>) => credentials => model
@@ -70,6 +79,9 @@ export const getAuthController = (connection: Connection): ControllerMethods => 
       baseRequestHandler(res, login(UserModel)(req.body)),
 
     register: (req, res) =>
-      baseRequestHandler(res, register(UserModel)(req.body))
+      validatedRequestHandler(
+        res,
+        () => validateNewUser(req),
+        () => register(UserModel)(req.body))
   }
 }
