@@ -7,8 +7,7 @@ const authorSelector = 'name';
 
 const create = (model: Model<Document>) => board => model
   .create(Object.assign(board, {
-    members: [ board.author ],
-    lists: [ ]
+    members: [ board.author ]
   }))
   .then((doc: any) => doc
     .populate({

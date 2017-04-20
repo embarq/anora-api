@@ -23,14 +23,17 @@ const BoardSchema = new Schema({
     require: true
   },
   color: String,
-  lists: [
-    {
-      title: {
-        type: String,
-        require: true
+  lists: {
+    default: [ ],
+    type: [
+      {
+        title: {
+          type: String,
+          require: true
+        }
       }
-    }
-  ]
+    ]
+  }
 });
 
 export const getBoardModel = (connection: Connection) => connection.model('Board', BoardSchema);
