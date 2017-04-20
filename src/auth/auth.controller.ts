@@ -29,7 +29,7 @@ const userDocumentToObject = (doc: Document) => doc.toObject({
 /**
  * @private
  */
-const validateNewUser = (req: ExpressValidator.RequestValidation) => {
+const validateRegisterForm = (req: ExpressValidator.RequestValidation) => {
   req.checkBody('name', 'Name cannot be empty').notEmpty();
   req.checkBody('email', 'Invalid email').isEmail();
   req.checkBody('password', 'Password should be minimum 8 characters').len({ min: 8 });
@@ -90,7 +90,7 @@ export const getAuthController = (connection: Connection): ControllerMethods => 
     register: (req, res) =>
       validatedRequestHandler(
         res,
-        () => validateNewUser(req),
+        () => validateRegisterForm(req),
         () => register(UserModel)(req.body))
   }
 }
