@@ -22,7 +22,10 @@ const BoardSchema = new Schema({
     type: String,
     require: true
   },
-  color: String,
+  color: {
+    type: String,
+    default: null
+  },
   lists: {
     default: [ ],
     type: [
