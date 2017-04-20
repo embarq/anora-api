@@ -1,6 +1,7 @@
-import * as express from 'express';
-import * as mongoose from 'mongoose';
-import * as bodyParser from 'body-parser';
+import express = require('express');
+import mongoose = require('mongoose');
+import bodyParser = require('body-parser');
+import validator = require('express-validator');
 
 import { getAuthRouter } from './auth/auth.router';
 import { getBoardsRouter } from './boards/boards.router';
@@ -12,6 +13,9 @@ const connection = mongoose.createConnection(databaseURI);
 const app = express();
 
 app.use(bodyParser.json());
+app.use(validator({
+  errorFormatter: (param, message, value) => ({ param, message, value })
+}));
 
 app.use('/auth', getAuthRouter(connection));
 app.use('/boards', getBoardsRouter(connection));
