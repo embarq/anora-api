@@ -17,6 +17,11 @@ const validateBoardId = (req: ExpressValidator.RequestValidation) => {
   return req.getValidationResult();
 }
 
+const validateBoardsListQuery = (req: ExpressValidator.RequestValidation) => {
+  req.checkQuery('short', 'Invalid query param').optional().isBoolean();
+  return req.getValidationResult();
+}
+
 const create = (model: Model<Document>) => board => model
   .create(Object.assign(board, {
     members: [ board.author ]
@@ -28,14 +33,16 @@ const create = (model: Model<Document>) => board => model
     })
     .execPopulate());
 
-const getAllBoards = (model: Model<Document>) => () => {
+const getAllBoards = (model: Model<Document>) => (isShort: boolean = false) => {
   const options = {
     path: 'author members',
     select: authorSelector
   };
 
+  const query = isShort ? '_id title color' : null;
+
   return model
-    .find()
+    .find(null, query)
     .exec()
     .then(docs => model.populate(docs, options));
 };
@@ -68,6 +75,9 @@ export const getBoardsController = (connection: Connection) => {
         () => getBoard(BoardModel)(req.params['id'])),
 
     getAllBoards: (req, res) =>
-      baseRequestHandler(res, getAllBoards(BoardModel)())
+      validatedRequestHandler(
+        res,
+        () => validateBoardsListQuery(req),
+        () => getAllBoards(BoardModel)(req.query['short']))
   }
 }
