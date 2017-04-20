@@ -78,6 +78,6 @@ export const getBoardsController = (connection: Connection) => {
       validatedRequestHandler(
         res,
         () => validateBoardsListQuery(req),
-        () => getAllBoards(BoardModel)(req.query['short']))
+        () => getAllBoards(BoardModel)(req.query['short'] === 'true'))
   }
 }
