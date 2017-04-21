@@ -8,7 +8,6 @@ const authorSelector = 'name';
 
 const validateCreateBoardForm = (req: ExpressValidator.RequestValidation) => {
   req.checkBody('title', 'Board title is required').notEmpty();
-  req.checkBody('author', 'Invalid author id or missing').isMongoId();
   return req.getValidationResult();
 }
 
@@ -22,16 +21,18 @@ const validateBoardsListQuery = (req: ExpressValidator.RequestValidation) => {
   return req.getValidationResult();
 }
 
-const create = (model: Model<Document>) => board => model
+const create = (model: Model<Document>) => (board, authorId) => {
+  return model
   .create(Object.assign(board, {
-    members: [ board.author ]
+    author: authorId,
+    members: [ authorId ]
   }))
   .then((doc: any) => doc
     .populate({
       path: 'author members',
       select: authorSelector
     })
-    .execPopulate());
+    .execPopulate())};
 
 const getAllBoards = (model: Model<Document>) => (isShort: boolean = false) => {
   const options = {
@@ -66,7 +67,7 @@ export const getBoardsController = (connection: Connection) => {
       validatedRequestHandler(
         res,
         () => validateCreateBoardForm(req),
-        () => create(BoardModel)(req.body)),
+        () => create(BoardModel)(req.body, req.user)),
 
     getBoard: (req, res) =>
       validatedRequestHandler(

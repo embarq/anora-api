@@ -12,16 +12,21 @@ export const authMiddleware: RequestHandler = (req: AnoraAuthRequest, res, next)
   if (token != null) {
     return decodeToken(token)
       .then(payload => {
-        req.user = payload;
+        req.user = payload._doc._id;
         next();
       })
-      .catch(err => next(err));
+      .catch(err => res
+        .status(403)
+        .json({
+          type: 'auth',
+          message: 'Unauthorized: token malformed'
+        }));
   } else {
     return res
       .status(403)
       .json({
         type: 'auth',
-        message: 'Unauthorized'
+        message: 'Unauthorized: token is not present'
       })
       .end();
   }
