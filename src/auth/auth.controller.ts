@@ -1,19 +1,9 @@
-import { RequestHandler } from 'express';
-import { strictEqual } from 'assert';
 import { Connection, Document, Model } from 'mongoose';
 import { compare, hash } from 'bcryptjs';
 
-import ExpressValidator = require('express-validator');
-
 import { getUserModel, Credentials, User } from '../user/user.model';
 import { ControllerMethods } from '../etc/declarations';
-import {
-  encodeToken,
-  decodeToken,
-
-  baseRequestHandler,
-  validatedRequestHandler
-} from '../etc/helpers';
+import { encodeToken, validatedRequestHandler } from '../etc/helpers';
 
 /**
  * @private
@@ -27,7 +17,7 @@ const registerUser = (model: Model<Document>) =>
  */
 const userDocumentToObject = (doc: Document) => doc.toObject({
   minimize: true,
-  transform: (doc, ret) => {
+  transform: ( _ , ret) => {
     delete (ret as any).password;
   }
 });
@@ -64,7 +54,7 @@ const register = (model: Model<Document>) => (user: User) => model
   .then(doc => userDocumentToObject(doc));
 
 /** Model -> Credentials -> Promise */
-const login = (model: Model<Document>) => credentials => model
+const login = (model: Model<Document>) => (credentials: Credentials) => model
   .findOne({ email: credentials.email })
   .exec()
   .then((doc: User) => {

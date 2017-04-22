@@ -23,4 +23,4 @@ api.use('/boards', getBoardsRouter(connection));
 
 app.use('/api', api);
 
-app.listen(process.env.PORT || 3000, _ => console.log('App running'));
+app.listen(process.env.PORT || 3000, () => console.log('App running'));

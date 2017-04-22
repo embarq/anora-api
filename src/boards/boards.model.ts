@@ -6,13 +6,28 @@ import {
   Types
 } from 'mongoose';
 
-const UserRef = {
-  type: Schema.Types.ObjectId,
-  ref: 'User'
-};
+import { userRef } from '../user/user.model';
+
+export namespace Board {
+  export interface BoardList {
+    _id: string;
+    title: string;
+  }
+
+  export interface Schema {
+    members: Array<string>;
+    author: string;
+    title: string;
+    color?: string;
+    lists?: Array<BoardList>;
+  }
+}
 
 const BoardSchema = new Schema({
-  members: [ UserRef ],
+  members: {
+    type: [ userRef ],
+    required: true
+  },
   author: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -20,7 +35,7 @@ const BoardSchema = new Schema({
   },
   title: {
     type: String,
-    require: true
+    required: true
   },
   color: {
     type: String,
@@ -32,7 +47,7 @@ const BoardSchema = new Schema({
       {
         title: {
           type: String,
-          require: true
+          required: true
         }
       }
     ]

@@ -2,8 +2,8 @@ import { Express, Request, RequestHandler } from 'express';
 import { decodeToken } from '../etc/helpers';
 import { User } from '../user/user.model';
 
-interface AnoraAuthRequest extends Request {
-  user: User;
+export interface AnoraAuthRequest extends Request {
+  user: string;
 }
 
 export const authMiddleware: RequestHandler = (req: AnoraAuthRequest, res, next) => {

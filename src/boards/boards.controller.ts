@@ -1,7 +1,9 @@
 import { Connection, Document, Model } from 'mongoose';
 import { RequestHandler } from 'express';
-import { getBoardModel } from './boards.model';
+import { Board, getBoardModel } from './boards.model';
 import { baseRequestHandler, validatedRequestHandler } from '../etc/helpers';
+import { ControllerMethods } from '../etc/declarations';
+import { AnoraAuthRequest } from '../auth/auth.middleware';
 import ExpressValidator = require('express-validator');
 
 const authorSelector = 'name';
@@ -21,8 +23,7 @@ const validateBoardsListQuery = (req: ExpressValidator.RequestValidation) => {
   return req.getValidationResult();
 }
 
-const create = (model: Model<Document>) => (board, authorId) => {
-  return model
+const create = (model: Model<Document>) => (board: Board.Schema, authorId: string) => model
   .create(Object.assign(board, {
     author: authorId,
     members: [ authorId ]
@@ -32,23 +33,27 @@ const create = (model: Model<Document>) => (board, authorId) => {
       path: 'author members',
       select: authorSelector
     })
-    .execPopulate())};
+    .execPopulate());
 
-const getAllBoards = (model: Model<Document>) => (isShort: boolean = false) => {
+const getAllBoards = (model: Model<Document>) => (author: string, isShort: boolean = false) => {
   const options = {
     path: 'author members',
     select: authorSelector
   };
 
-  const query = isShort ? '_id title color' : null;
+  const query = isShort ? '_id title color' : { };
 
   return model
-    .find(null, query)
+    .find({ }, query)
+    .where({
+      members: { $in: [ author ] },
+      author
+    })
     .exec()
     .then(docs => model.populate(docs, options));
 };
 
-const getBoard = (model: Model<Document>) => id => model
+const getBoard = (model: Model<Document>) => (id: string) => model
   .findById(id)
   .exec()
   .then(doc => doc
@@ -63,7 +68,7 @@ export const getBoardsController = (connection: Connection) => {
   const BoardModel = getBoardModel(connection);
 
   return {
-    create: (req, res) =>
+    create: (req: AnoraAuthRequest, res) =>
       validatedRequestHandler(
         res,
         () => validateCreateBoardForm(req),
@@ -75,10 +80,10 @@ export const getBoardsController = (connection: Connection) => {
         () => validateBoardId(req),
         () => getBoard(BoardModel)(req.params['id'])),
 
-    getAllBoards: (req, res) =>
+    getAllBoards: (req: AnoraAuthRequest, res) =>
       validatedRequestHandler(
         res,
         () => validateBoardsListQuery(req),
-        () => getAllBoards(BoardModel)(req.query['short'] === 'true'))
-  }
+        () => getAllBoards(BoardModel)(req.user, req.query['short'] === 'true'))
+  } as ControllerMethods;
 }
