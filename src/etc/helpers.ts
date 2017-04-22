@@ -1,8 +1,7 @@
 import { Response } from 'express';
-import { ValidationError } from 'mongoose';
-import ExpressValidator = require('express-validator');
 import { sign, verify } from 'jsonwebtoken';
 import { cert } from '../etc/config';
+import { HttpError, RequestValidationError } from './errors';
 
 export const encodeToken = (payload: any) => new Promise<any>((resolve, reject) =>
   sign(payload, cert, { expiresIn: '3 days' }, (err, encoded) =>
@@ -12,27 +11,19 @@ export const decodeToken = (token: string) => new Promise<any>((resolve, reject)
   verify(token, cert, (err, decoded) =>
     err != null ? reject(err) : resolve(decoded)));
 
-export class RequestValidationError extends Error {
-  public readonly name: 'RequestValidationError';
-
-  constructor(public error: ExpressValidator.Dictionary<ExpressValidator.MappedError>) {
-    super();
-  }
-}
-
-export const getValidationErrorResponse = err => {
-  if (!(err instanceof RequestValidationError)) {
+export const getErrorResponseBody = (err: Error | HttpError | RequestValidationError) => {
+  if (err instanceof RequestValidationError) {
     return {
-      content: {
-        message: err.message
-      },
-      type: 'system'
-    }
+      content: err.error,
+      type: 'validation'
+    };
   }
   return {
-    content: err.error,
-    type: 'validation'
-  };
+    content: {
+      message: err.message
+    },
+    type: 'system'
+  }
 }
 
 export const baseRequestHandler = (response: Response, promise: Promise<any>) => promise
@@ -65,7 +56,7 @@ export const validatedRequestHandler = (
     .status(200)
     .json(result)
     .end())
-  .catch(error => response
-    .status(400)
-    .json(getValidationErrorResponse(error))
+  .catch(err => response
+    .status(err instanceof HttpError ? err.code : 400)
+    .json(getErrorResponseBody(err))
     .end());
